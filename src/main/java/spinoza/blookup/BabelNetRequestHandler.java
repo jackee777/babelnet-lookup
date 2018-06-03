@@ -2,9 +2,16 @@ package spinoza.blookup;
 
 import it.uniroma1.lcl.babelnet.BabelNet;
 import it.uniroma1.lcl.babelnet.BabelSense;
-import it.uniroma1.lcl.babelnet.BabelSenseSource;
+import it.uniroma1.lcl.babelnet.data.BabelSenseSource;
+import it.uniroma1.lcl.babelnet.data.BabelPointer;
+import it.uniroma1.lcl.babelnet.BabelNetQuery;
 import it.uniroma1.lcl.babelnet.BabelSynset;
+import it.uniroma1.lcl.babelnet.BabelSynsetRelation;
+import it.uniroma1.lcl.babelnet.resources.WikipediaID;
+import it.uniroma1.lcl.babelnet.WordNetSynsetID;
+import it.uniroma1.lcl.babelnet.BabelSynsetID;
 import it.uniroma1.lcl.jlt.util.Language;
+import com.babelscape.util.UniversalPOS;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,9 +27,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import edu.mit.jwi.item.IPointer;
-import edu.mit.jwi.item.POS;
 
 public class BabelNetRequestHandler extends AbstractHandler {
 
@@ -69,12 +73,12 @@ public class BabelNetRequestHandler extends AbstractHandler {
         Matcher matcher = WIKIPEDIA_REQUESTS.matcher(target);
         if (matcher.find()) {
             String title = matcher.group(1);
-            POS pos = POS.getPartOfSpeech(matcher.group(2).charAt(0));
+            UniversalPOS pos = UniversalPOS.valueOf(matcher.group(2).charAt(0));
             LOGGER.debug("Wikipedia title: " + title + ", POS: " + pos);
-            List<BabelSynset> synsets = bn.getSynsetsFromWikipediaTitle(
-            		Language.EN, title, pos);
+            List<BabelSynset> synsets = bn.getSynsets(new WikipediaID(title, Language.EN, pos));
             if (synsets == null || synsets.isEmpty()) {
-	            synsets = bn.getSynsets(Language.EN, title, pos);
+                    BabelNetQuery q = new BabelNetQuery.Builder(title).from(Language.EN).POS(pos).build();
+	            synsets = bn.getSynsets(q);
             }
             if (synsets != null && !synsets.isEmpty()) {
                 for (BabelSynset synset : synsets) {
@@ -92,7 +96,7 @@ public class BabelNetRequestHandler extends AbstractHandler {
         if (matcher.find()) {
             String offset = matcher.group(1);
             LOGGER.debug("WordNet offset: " + offset);
-            List<BabelSynset> synsets = bn.getSynsetsFromWordNetOffset(offset);
+            List<BabelSynset> synsets = bn.getSynsets(new WordNetSynsetID(target));
             if (synsets != null && !synsets.isEmpty()) {
                 for (BabelSynset synset : synsets) {
                     response.getWriter().println(synset.getId());
@@ -114,17 +118,17 @@ public class BabelNetRequestHandler extends AbstractHandler {
             Language lang = Language.valueOf(langId.toUpperCase());
             List<BabelSynset> synsets;
             if (posStr == null) {
-            	synsets	= bn.getSynsets(lang, query);
+            	synsets	= bn.getSynsets(query, lang);
             } else {
-            	POS pos = null;
+            	UniversalPOS pos = null;
             	try {
-            		pos = POS.valueOf(posStr.toUpperCase());
+            		pos = UniversalPOS.valueOf(posStr.toUpperCase());
             	} catch (IllegalArgumentException ex) {
                 	if (posStr.length() == 1) {
-                		pos = POS.getPartOfSpeech(posStr.charAt(0));
+                		pos = UniversalPOS.valueOf(posStr.charAt(0));
                 	}
             	}
-            	synsets	= bn.getSynsets(lang, query, pos);
+            	synsets	= bn.getSynsets(query, lang, pos);
             }
             if (synsets != null && !synsets.isEmpty()) {
                 for (BabelSynset synset : synsets) {
@@ -145,9 +149,9 @@ public class BabelNetRequestHandler extends AbstractHandler {
             String posId = matcher.group(2);
             String query = matcher.group(3);
             Language lang = Language.valueOf(langId.toUpperCase());
-            POS pos = POS.getPartOfSpeech(posId.charAt(0));
-			List<BabelSynset> synsets = bn.getSynsets(lang, query, pos, false,
-					BabelSenseSource.values());
+            UniversalPOS pos = UniversalPOS.valueOf(posId.charAt(0));
+            BabelNetQuery q = new BabelNetQuery.Builder(query).from(lang).POS(pos).normalized(false).build();
+	    List<BabelSynset> synsets = bn.getSynsets(q);
             if (synsets != null && !synsets.isEmpty()) {
                 for (BabelSynset synset : synsets) {
                     response.getWriter().println(synset.getId());
@@ -164,19 +168,12 @@ public class BabelNetRequestHandler extends AbstractHandler {
         if (matcher.find()) {
             String id = matcher.group(1);
             LOGGER.debug("BabelNet ID: " + id);
-            BabelSynset synset = bn.getSynsetFromId(id);
+            BabelSynset synset = bn.getSynset(new BabelSynsetID(id));
             if (synset != null) {
-                Map<IPointer, List<BabelSynset>> relatedMap = synset.getRelatedMap();
-                for (Entry<IPointer, List<BabelSynset>> entry : relatedMap
-                        .entrySet()) {
-                    for (BabelSynset relatedSynset : entry.getValue()) {
-                        IPointer pointer = entry.getKey();
-//                        response.getWriter().format("%s\t%s\t%s\n",
-//                                pointer.getSymbol(), relatedSynset.getId(),
-//                                pointer.getName()); // name is for humans
-                        response.getWriter().format("%s\t%s\n",
-                                pointer.getSymbol(), relatedSynset.getId());
-                    }
+		for (BabelSynsetRelation rel : synset.getOutgoingEdges()) {
+		    BabelPointer pointer = rel.getPointer();
+                    response.getWriter().format("%s\t%s\n",
+                            pointer.getSymbol(), rel.getTarget());
                 }
                 return true;
             }
@@ -190,7 +187,7 @@ public class BabelNetRequestHandler extends AbstractHandler {
         if (matcher.find()) {
             String id = matcher.group(1);
             LOGGER.debug("BabelNet ID: " + id);
-            BabelSynset synset = bn.getSynsetFromId(id);
+            BabelSynset synset = bn.getSynset(new BabelSynsetID(id));
             if (synset != null) {
             	response.getWriter().write(synset.getSynsetType().name());
                 return true;
@@ -206,7 +203,7 @@ public class BabelNetRequestHandler extends AbstractHandler {
             String id = matcher.group(1);
             String langId = matcher.group(2);
             LOGGER.debug("BabelNet ID: " + id);
-            BabelSynset synset = bn.getSynsetFromId(id);
+            BabelSynset synset = bn.getSynset(new BabelSynsetID(id));
             if (synset != null) {
             	List<BabelSense> senses;
             	if (langId == null || langId.isEmpty()) {
@@ -216,7 +213,7 @@ public class BabelNetRequestHandler extends AbstractHandler {
 				}
                 for (BabelSense sense : senses) {
                     response.getWriter().format("%s\t%s\t%s\t%s\n",
-                            sense.getLemma(), sense.getPOS(),
+                            sense.getFullLemma(), sense.getPOS(),
                             sense.getLanguage(), sense.getSource());
                 }
                 return true;
@@ -232,7 +229,7 @@ public class BabelNetRequestHandler extends AbstractHandler {
             String id = matcher.group(1);
             String langId = matcher.group(2);
             LOGGER.debug("BabelNet ID: " + id);
-            BabelSynset synset = bn.getSynsetFromId(id);
+            BabelSynset synset = bn.getSynset(new BabelSynsetID(id));
             if (synset != null) {
             	List<String> uris;
             	if (langId == null || langId.isEmpty()) {

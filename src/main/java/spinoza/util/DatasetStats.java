@@ -2,6 +2,8 @@ package spinoza.util;
 
 import it.uniroma1.lcl.babelnet.BabelNet;
 import it.uniroma1.lcl.babelnet.BabelSynset;
+import it.uniroma1.lcl.babelnet.BabelSynsetID;
+import it.uniroma1.lcl.babelnet.data.BabelSenseSource;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -43,28 +45,25 @@ public class DatasetStats {
 					nonbabelnetCount++;
 					continue;
 				}
-				BabelSynset synset = bn.getSynsetFromId(offset);
+				BabelSynset synset = bn.getSynset(new BabelSynsetID(offset));
 				if (synset == null) {
 					System.err.println("Synset not found: " + offset);
 					continue;
 				}
-				switch (synset.getSynsetSource()) {
-				case WN:
-					wordNetCount++;
-					wn.println(offset);
-					break;
-				case WIKI:
-					wikiCount++;
-					wiki.println(offset);
-					break;
-				case WIKIWN:
-					wordNetWikiCount++;
-					wn.println(offset);
-					wiki.println(offset);
-					break;
-				default:
-					otherCount++;
-					break;
+				for (BabelSenseSource source : synset.getSenseSources()) {
+					switch (source) {
+					case WN:
+						wordNetCount++;
+						wn.println(offset);
+						break;
+					case WIKI:
+						wikiCount++;
+						wiki.println(offset);
+						break;
+					default:
+						otherCount++;
+						break;
+					}
 				}
 				count++;
 				if (count % 1000 == 0) System.err.print(".");

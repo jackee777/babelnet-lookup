@@ -1,11 +1,12 @@
 package spinoza.util;
 
-import it.uniroma1.lcl.babelnet.BabelCategory;
+import it.uniroma1.lcl.babelnet.data.BabelCategory;
 import it.uniroma1.lcl.babelnet.BabelNet;
 import it.uniroma1.lcl.babelnet.BabelSense;
 import it.uniroma1.lcl.babelnet.BabelSynset;
-import it.uniroma1.lcl.babelnet.BabelSynsetSource;
-import it.uniroma1.lcl.babelnet.iterators.BabelSynsetIterator;
+import it.uniroma1.lcl.babelnet.BabelSynsetRelation;
+import it.uniroma1.lcl.babelnet.data.BabelSenseSource;
+import it.uniroma1.lcl.babelnet.data.BabelPointer;
 import it.uniroma1.lcl.jlt.util.Language;
 
 import java.io.IOException;
@@ -31,8 +32,6 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
-
-import edu.mit.jwi.item.IPointer;
 
 public class TripletGenerator {
 
@@ -80,27 +79,29 @@ public class TripletGenerator {
 		ImmutableSet<String> wordNetRelations = ImmutableSet.of(
 				 "@", "@i", "~", "~i", "+", "#m", "#p", "%m", "%p", 
 				 "^", "=", ";r", "-r", ";c", "-c", ";u", "-u", "$");
-		for (BabelSynsetIterator it = bn.getSynsetIterator(); it.hasNext();) {
-			BabelSynset synset = (BabelSynset) it.next();
-			if (synset.getSynsetSource() == BabelSynsetSource.WN ||
-					synset.getSynsetSource() == BabelSynsetSource.WIKIWN) {
-				Map<IPointer, List<BabelSynset>> relatedMap = synset.getRelatedMap();
-				for (Entry<IPointer, List<BabelSynset>> entry : relatedMap.entrySet()) {
-					IPointer pointer = entry.getKey();
-					if (wordNetRelations.contains(pointer.getSymbol())) {
-		                for (BabelSynset relatedSynset : entry.getValue()) {
-				                System.out.printf("%s\t%s\t%s\n", synset.getId(),
-				                		pointer.getSymbol(), relatedSynset.getId());
-		                }
-					} // end check relationship type
-	            } // end for
+		for (Iterator<BabelSynset> it = bn.getSynsetIterator(); it.hasNext();) {
+			BabelSynset synset = it.next();
+			boolean isWn = false;
+			for (BabelSenseSource source : synset.getSenseSources()) {
+			    if (source == BabelSenseSource.WN) {
+				isWn = true;
+			    }
 			} // end check source
+			if (isWn) {
+				for (BabelSynsetRelation rel : synset.getOutgoingEdges()) {
+					BabelPointer pointer = rel.getPointer();
+					if (wordNetRelations.contains(pointer.getSymbol())) {
+						System.out.printf("%s\t%s\t%s\n", synset.getId(),
+							pointer.getSymbol(), rel.getTarget());
+					}
+				} // end for
+			}
 		}
 	}
 
 	private static void extractRelatedRelationships(BabelNet bn, String from) throws IOException {
 		int count = 0;
-		BabelSynsetIterator it = bn.getSynsetIterator();
+		Iterator<BabelSynset> it = bn.getSynsetIterator();
 		from = from.trim();
 		if (!from.isEmpty()) {
 			System.err.println("Skipping...\n");
@@ -119,25 +120,22 @@ public class TripletGenerator {
 		}
 		while (it.hasNext()) {
 			BabelSynset synset = (BabelSynset) it.next();
-			Map<IPointer, List<BabelSynset>> relatedMap = synset.getRelatedMap();
-			for (Entry<IPointer, List<BabelSynset>> entry : relatedMap.entrySet()) {
-	                for (BabelSynset relatedSynset : entry.getValue()) {
-			                IPointer pointer = entry.getKey();
-			                System.out.printf("%s\t%s\t%s\n", synset.getId(),
-			                		pointer.getSymbol(), relatedSynset.getId());
-			                count++;
-			                if (count % 10000 == 0) {
-			                	System.err.println(count + "...");
-			                }
+			for (BabelSynsetRelation rel : synset.getOutgoingEdges()) {
+				BabelPointer pointer = rel.getPointer();
+				System.out.printf("%s\t%s\t%s\n", synset.getId(),
+						pointer.getSymbol(), rel.getTarget());
+				count++;
+				if (count % 10000 == 0) {
+					System.err.println(count + "...");
+				}
 	                }
-            }
 		}
 		System.err.println("Successfully finished!\n");
 	}
 
 	private static void extractSenses(BabelNet bn) {
 		int count = 0;
-		BabelSynsetIterator it = bn.getSynsetIterator();
+		Iterator<BabelSynset> it = bn.getSynsetIterator();
 		while (it.hasNext()) {
 			BabelSynset synset = (BabelSynset) it.next();
 			System.out.print(synset.getId());
@@ -161,7 +159,7 @@ public class TripletGenerator {
 	}
 
 	private static void extractCategories(BabelNet bn) throws IOException {
-		for (BabelSynsetIterator it = bn.getSynsetIterator(); it.hasNext();) {
+		for (Iterator<BabelSynset> it = bn.getSynsetIterator(); it.hasNext();) {
 			BabelSynset synset = (BabelSynset) it.next();
 			for (BabelCategory cat : synset.getCategories(Language.EN)) {
 				System.out.printf("%s\t%s\t%s\n", synset.getId(),
