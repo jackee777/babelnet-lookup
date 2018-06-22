@@ -5,8 +5,10 @@ import it.uniroma1.lcl.babelnet.BabelNet;
 import it.uniroma1.lcl.babelnet.BabelSense;
 import it.uniroma1.lcl.babelnet.BabelSynset;
 import it.uniroma1.lcl.babelnet.BabelSynsetRelation;
+import it.uniroma1.lcl.babelnet.BabelNetQuery;
 import it.uniroma1.lcl.babelnet.data.BabelSenseSource;
 import it.uniroma1.lcl.babelnet.data.BabelPointer;
+import it.uniroma1.lcl.babelnet.WordNetSynsetID;
 import it.uniroma1.lcl.jlt.util.Language;
 
 import java.io.IOException;
@@ -41,6 +43,9 @@ public class TripletGenerator {
     	String sparqlEndPoint = cmd.getOptionValue("sparql", "http://dbpedia.org/sparql");
         if (cmd.hasOption("wn")) {
         	extractWordNetRelationships(BabelNet.getInstance());
+		}
+        if (cmd.hasOption("wnm")) {
+		extractWordNetMapping(BabelNet.getInstance());
 		}
         if (cmd.hasOption("r")) {
         	extractRelatedRelationships(BabelNet.getInstance(),
@@ -97,6 +102,22 @@ public class TripletGenerator {
 				} // end for
 			}
 		}
+	}
+
+	private static void extractWordNetMapping(BabelNet bn) {
+	    int count = 0;
+	    for (Iterator<BabelSynset> it = bn.iterator(); it.hasNext();) {
+		BabelSynset synset = it.next();
+		List<WordNetSynsetID> wnSynsets = synset.getWordNetOffsets();
+		for (WordNetSynsetID wnSynset : wnSynsets) {
+		    System.out.printf("%s\t%s\n", synset.getID().toString(), wnSynset.toString());
+		}
+		count++;
+		if (count % 100000 == 0) {
+		    System.err.printf("Count: %d\n", count);
+		}
+	    }
+	    System.err.printf("Total: %d\n", count);
 	}
 
 	private static void extractRelatedRelationships(BabelNet bn, String from) throws IOException {
@@ -330,6 +351,7 @@ public class TripletGenerator {
         Options options = new Options();
         try {
         	options.addOption("wn", false, "WordNet only");
+        	options.addOption("wnm", false, "BabelNet -> WordNet mapping");
         	options.addOption("r", false, "related synsets");
         	options.addOption("from", true, "starting from");
         	options.addOption("c", false, "categories");
@@ -339,7 +361,7 @@ public class TripletGenerator {
         	options.addOption("qdms", "query-delay-ms", true, "Delay after each query to SPARQL endpoint");
         	options.addOption("sparql", true, "URI to SPARQL endpoint (default to DBpedia)");
             CommandLine cmd = new PosixParser().parse(options, args);
-			if (!cmd.hasOption("wn") && !cmd.hasOption("r")
+			if (!cmd.hasOption("wn") && !cmd.hasOption("wnm") && !cmd.hasOption("r")
 					&& !cmd.hasOption("c") && !cmd.hasOption("t")
 					&& !cmd.hasOption("o") && !cmd.hasOption("s")) {
             	System.err.println("At least one type of triplets must be enabled.");
