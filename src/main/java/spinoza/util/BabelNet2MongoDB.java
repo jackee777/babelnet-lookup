@@ -1,11 +1,11 @@
 package spinoza.util;
 
 import java.util.Set;
+import java.util.Iterator;
 
 import it.uniroma1.lcl.babelnet.BabelNet;
 import it.uniroma1.lcl.babelnet.BabelSense;
 import it.uniroma1.lcl.babelnet.BabelSynset;
-import it.uniroma1.lcl.babelnet.iterators.BabelSynsetIterator;
 import it.uniroma1.lcl.jlt.util.Language;
 
 import com.google.common.collect.Sets;
@@ -43,12 +43,12 @@ public class BabelNet2MongoDB {
 		
 		System.err.println("Started importing names from BabelNet to MongoDB");
 		int count = 0;
-		for (BabelSynsetIterator it = bn.getSynsetIterator(); it.hasNext();) {
+		for (Iterator<BabelSynset> it = bn.getSynsetIterator(); it.hasNext();) {
 			BabelSynset synset = (BabelSynset) it.next();
-			String id = synset.getId().replaceAll("bn:0*", "");
+			String id = synset.getID().toString().replaceAll("bn:0*", "");
 			Set<String> senseSet = Sets.newHashSet();
 			for (BabelSense sense : synset.getSenses(Language.EN)) {	
-				senseSet.add(normalizeSense(sense.getLemma()));
+				senseSet.add(normalizeSense(sense.getFullLemma()));
 			}
 			BasicDBList senses = new BasicDBList(); 
 			senses.addAll(senseSet);

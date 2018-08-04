@@ -4,13 +4,14 @@ A simple BabelNet web service for user and non-Java programs.
 
 ### Install BabelNet API
 
-1. Change directory into BabelNet-API-2.5.1
+1. Change directory into BabelNet-API-4.0.1
 2. Compile: `ant -f build.xml`
 3. Install into local Maven repository:
  
- `mvn install:install-file -Dfile=babelnet-api-2.5.1.jar -DgroupId=it.uniroma1.lcl -DartifactId=babelnet -Dversion=2.5.1 -Dpackaging=jar -DgeneratePom=true`
+ `mvn install:install-file -Dfile=babelnet-api-4.0.1.jar -DgroupId=it.uniroma1.lcl -DartifactId=babelnet -Dversion=4.0.1 -Dpackaging=jar -DgeneratePom=true`
  
- `mvn install:install-file -Dfile=lib/jlt-1.0.0.jar -DgroupId=it.uniroma1.lcl -DartifactId=jlt -Dversion=1.0.0 -Dpackaging=jar -DgeneratePom=true`
+ `mvn install:install-file -Dfile=lib/babelscape-data-commons-1.0.jar -DgroupId=com.babelscape -DartifactId=commons -Dversion=1.0.0 -Dpackaging=jar -DgeneratePom=true`
+
 4. Make sure that the `babelnet.dir` property in 
 `config/babelnet.var.properties` point to the directory 
 where BabelNet data lives. 
@@ -28,7 +29,7 @@ where BabelNet data lives.
 Run `run.sh` to start the server. By default it will listen to port `9000`.
 
 The script assumes that BabelNet jar and libraries are in a directory named 
-`BabelNet-API-2.5.1` in the same directory as babelnet-lookup. If your 
+`BabelNet-API-4.0.1` in the same directory as babelnet-lookup. If your 
 installation is different, you need to change it accordingly.
 
 ### Stop

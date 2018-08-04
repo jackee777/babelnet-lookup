@@ -8,9 +8,8 @@ import static spinoza.util.TripletGenerator.queryOntology;
 import static spinoza.util.TripletGenerator.abbr;
 import static spinoza.util.TripletGenerator.sanitize;
 import it.uniroma1.lcl.babelnet.BabelSense;
-import it.uniroma1.lcl.babelnet.BabelSenseSource;
+import it.uniroma1.lcl.babelnet.data.BabelSenseSource;
 import it.uniroma1.lcl.babelnet.BabelSynset;
-import it.uniroma1.lcl.babelnet.BabelSynsetSource;
 import it.uniroma1.lcl.jlt.util.Language;
 
 import java.io.ByteArrayOutputStream;
@@ -32,29 +31,6 @@ public class TripletGeneratorTest {
 				"http://dbpedia.org/resource/The_Hague", "http://dbpedia.org/sparql");
 		for (String type : types) {
 			assertTrue(type.startsWith("http://dbpedia.org/ontology/"));
-		}
-	}
-	
-	@Test
-	public void testExtractDBpediaTypes() {
-		BabelSense theHagueSense = new BabelSense(Language.EN, "The_Hague", 
-				POS.NOUN, BabelSenseSource.WIKI, null, null, 0, null, null);
-		@SuppressWarnings("unchecked")
-		final BabelSynset theHague = new BabelSynset("bn:00000002n", POS.NOUN,
-				BabelSynsetSource.WIKI, Collections.EMPTY_LIST,  
-				Collections.singletonList(theHagueSense), 
-				null, null, null, null, null);
-		final Iterator<BabelSynset> it = Collections.singletonList(theHague).iterator();
-		String output = captureOutput(new Runnable() {
-			public void run() {
-				extractDBpediaTypes(it, "http://dbpedia.org/sparql", 0);				
-			}
-		});
-		for (String line : output.split("\n")) {
-			String[] fields = line.split("\t");
-			assertEquals(3, fields.length);
-			assertEquals("bn:00000002n", fields[0]);
-			assertEquals("rdf:type", fields[1]);
 		}
 	}
 	
