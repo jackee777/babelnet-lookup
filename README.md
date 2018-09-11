@@ -1,5 +1,20 @@
 A simple BabelNet web service for user and non-Java programs.
 
+## Obtaining BABEL2WN_MAP
+
+I am not distributing BABEL2WN_MAP, since it is not clear whether I have
+permission to do so. You will need a BabelNet 4.0.1 dump and the Java code for
+the BabelNet 4.0.1 API. [Download the
+latter](https://babelnet.org/data/4.0/BabelNet-API-4.0.1.zip), unzip it in the
+parent directory of wherever you have cloned this repository. Change
+`../BabelNet-API-4.0.1/config/babelnet.var.properties` so that it points to
+your BabelNet dump. You can now run::
+
+ $ ./gen.sh -wnm > babelwnmap.tsv
+
+You will then need to manually edit this file to delete some extra junk from
+the beginning.
+
 ## Build
 
 ### Install BabelNet API

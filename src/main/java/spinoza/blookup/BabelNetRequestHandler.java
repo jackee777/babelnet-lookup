@@ -12,6 +12,7 @@ import it.uniroma1.lcl.babelnet.WordNetSynsetID;
 import it.uniroma1.lcl.babelnet.BabelSynsetID;
 import it.uniroma1.lcl.jlt.util.Language;
 import com.babelscape.util.UniversalPOS;
+import it.uniroma1.lcl.babelnet.WordNetSense;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,6 +49,8 @@ public class BabelNetRequestHandler extends AbstractHandler {
             .compile("^/synset/([^/]+)/senses(?:/(\\w+))$");
     private static final Pattern DBPEDIA_URI_REQUESTS = Pattern
             .compile("^/synset/([^/]+)/dbpedia_uri(?:/([^/]+))?$");
+    private static final Pattern SYNSET_TO_WORDNET_REQUESTS = Pattern
+            .compile("^/synset/([^/]+)/wn$");
 
     private BabelNet bn = BabelNet.getInstance();
 
@@ -63,7 +66,8 @@ public class BabelNetRequestHandler extends AbstractHandler {
                 handleRelatedSynsetRequest(target, response) ||
                 handleSensesRequest(target, response) ||
                 handleDBpediaRequest(target, response) ||
-                handleSynsetTypeRequest(target, response);
+                handleSynsetTypeRequest(target, response) ||
+                handleSynsetToWordnetRequest(target, response);
         baseRequest.setHandled(handled);
         // response.sendError(404);
     }
@@ -242,6 +246,24 @@ public class BabelNetRequestHandler extends AbstractHandler {
                 }
                 return true;
             }
+        }
+        return false;
+    }
+
+    private boolean handleSynsetToWordnetRequest(String target,
+            HttpServletResponse response) throws IOException {
+        Matcher matcher = SYNSET_TO_WORDNET_REQUESTS.matcher(target);
+        if (matcher.find()) {
+            String id = matcher.group(1);
+            LOGGER.debug("BabelNet ID: " + id);
+            BabelSynset synset = bn.getSynset(new BabelSynsetID(id));
+            List<WordNetSynsetID> wnSynsets = synset.getWordNetOffsets();
+            boolean found = false;
+            for (WordNetSynsetID wnSynset : wnSynsets) {
+                response.getWriter().println(wnSynset.toString());
+                found = true;
+            }
+            return found;
         }
         return false;
     }
