@@ -20,14 +20,15 @@ the beginning.
 ### Install BabelNet API
 
 1. Change directory into BabelNet-API-4.0.1
-2. Compile: `ant -f build.xml`
-3. Install into local Maven repository:
+2. Install into local Maven repository:
  
  `mvn install:install-file -Dfile=babelnet-api-4.0.1.jar -DgroupId=it.uniroma1.lcl -DartifactId=babelnet -Dversion=4.0.1 -Dpackaging=jar -DgeneratePom=true`
  
+ `mvn install:install-file -Dfile=lib/lcl-jlt-2.4.jar -DgroupId=it.uniroma1.lcl -DartifactId=jlt -Dversion=2.4 -Dpackaging=jar -DgeneratePom=true`
+ 
  `mvn install:install-file -Dfile=lib/babelscape-data-commons-1.0.jar -DgroupId=com.babelscape -DartifactId=commons -Dversion=1.0.0 -Dpackaging=jar -DgeneratePom=true`
 
-4. Make sure that the `babelnet.dir` property in 
+3. Make sure that the `babelnet.dir` property in 
 `config/babelnet.var.properties` point to the directory 
 where BabelNet data lives. 
 
