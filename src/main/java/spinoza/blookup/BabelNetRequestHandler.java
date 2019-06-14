@@ -100,7 +100,8 @@ public class BabelNetRequestHandler extends AbstractHandler {
         if (matcher.find()) {
             String offset = matcher.group(1);
             LOGGER.debug("WordNet offset: " + offset);
-            List<BabelSynset> synsets = bn.getSynsets(new WordNetSynsetID(target));
+            System.out.println(bn.getSynsets(new WordNetSynsetID(offset)));
+	    List<BabelSynset> synsets = bn.getSynsets(new WordNetSynsetID(offset));
             if (synsets != null && !synsets.isEmpty()) {
                 for (BabelSynset synset : synsets) {
                     response.getWriter().println(synset.getId());
